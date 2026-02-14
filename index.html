@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Para Solanch</title>
+
+  <!-- QR (CDN) -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Nunito:wght@400;700;800&display=swap');
+
+    :root {
+      --bg-color: #fdfcf0;
+      --heart-red: #d32f2f;
+      --heart-pink: #e57373;
+      --heart-light: #ffcdd2;
+      --text-color: #4a4a4a;
+      --accent-color: #c62828;
+      --card-bg: #fffaf0;
+
+      /* Night */
+      --night-bg: #070A1A;
+      --night-card: rgba(255,255,255,0.06);
+      --night-text: rgba(255,255,255,0.92);
+      --night-border: rgba(255,255,255,0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-color);
+      font-family: 'Nunito', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background-color 350ms ease;
+    }
+
+    /* Stars canvas behind */
+    #stars {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 450ms ease;
+    }
+
+    body.night {
+      background-color: var(--night-bg);
+    }
+    body.night #stars { opacity: 1; }
+
+    .container {
+      background-color: var(--card-bg);
+      width: 100%;
+      max-width: 420px;
+      min-height: 100vh;
+      padding: 20px 18px 24px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+      border-radius: 18px;
+      z-index: 1;
+      transition: background-color 350ms ease, border 350ms ease, box-shadow 350ms ease;
+    }
+
+    body.night .container {
+      background: var(--night-card);
+      border: 1px solid var(--night-border);
+      box-shadow: 0 22px 44px rgba(0,0,0,0.42);
+      backdrop-filter: blur(10px);
+    }
+
+    .header-text {
+      width: 100%;
+      margin-top: 10px;
+      color: var(--text-color);
+      transition: color 350ms ease;
+    }
+    body.night .header-text { color: var(--night-text); }
+
+    h1 {
+      font-family: 'Dancing Script', cursive;
+      color: var(--accent-color);
+      font-size: 2.1rem;
+      margin: 8px 0 10px;
+      transition: color 350ms ease;
+    }
+    body.night h1 { color: #ff8a80; }
+
+    p {
+      font-size: 1.06rem;
+      line-height: 1.55;
+      margin: 0 0 12px;
+      color: #555;
+      transition: color 350ms ease;
+    }
+    body.night p { color: rgba(255,255,255,0.86); }
+
+    /* Árbol */
+    .tree-container {
+      position: relative;
+      width: 300px;
+      height: 350px;
+      margin: 14px auto 6px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      filter: drop-shadow(0 8px 12px rgba(0,0,0,0.05));
+      cursor: pointer;
+      user-select: none;
+    }
+    body.night .tree-container { filter: drop-shadow(0 18px 22px rgba(0,0,0,0.5)); }
+
+    .trunk {
+      width: 22px;
+      height: 112px;
+      background: linear-gradient(180deg, #a1887f, #6d4c41);
+      position: absolute;
+      bottom: 0;
+      border-radius: 7px;
+      z-index: 1;
+    }
+
+    .leaves-container {
+      position: absolute;
+      bottom: 85px;
+      width: 250px;
+      height: 250px;
+      z-index: 2;
+    }
+
+    .heart {
+      position: absolute;
+      width: 15px;
+      height: 15px;
+      background-color: var(--heart-red);
+      transform: rotate(45deg);
+      animation: pulse 2.2s infinite ease-in-out;
+      border-radius: 2px;
+    }
+
+    .heart::before, .heart::after {
+      content: "";
+      position: absolute;
+      width: 15px;
+      height: 15px;
+      background-color: inherit;
+      border-radius: 50%;
+    }
+    .heart::before { top: -8px; left: 0; }
+    .heart::after { left: -8px; top: 0; }
+
+    @keyframes pulse {
+      0% { transform: scale(1) rotate(45deg); }
+      50% { transform: scale(1.12) rotate(45deg); }
+      100% { transform: scale(1) rotate(45deg); }
+    }
+
+    /* Barra de acciones */
+    .actions {
+      width: 100%;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      margin: 8px 0 2px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: none;
+      cursor: pointer;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      transition: transform 0.08s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .btn:active { transform: scale(0.98); }
+
+    .btn-primary {
+      background: linear-gradient(180deg, #d32f2f, #b71c1c);
+      color: #fff;
+      box-shadow: 0 10px 16px rgba(183, 28, 28, 0.18);
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--accent-color);
+      border: 1px solid rgba(198,40,40,0.25);
+      box-shadow: 0 10px 16px rgba(0,0,0,0.05);
+    }
+
+    body.night .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.92);
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: 0 10px 18px rgba(0,0,0,0.30);
+    }
+
+    /* Toast */
+    .toast {
+      position: absolute;
+      left: 50%;
+      top: 16px;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(198,40,40,0.18);
+      color: #6d1b1b;
+      padding: 10px 12px;
+      border-radius: 14px;
+      box-shadow: 0 14px 22px rgba(0,0,0,0.07);
+      font-weight: 800;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 30;
+      max-width: 92%;
+      text-align: center;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(4px);
+    }
+
+    body.night .toast {
+      background: rgba(10, 12, 26, 0.82);
+      border: 1px solid rgba(255,255,255,0.14);
+      color: rgba(255,255,255,0.92);
+      box-shadow: 0 20px 30px rgba(0,0,0,0.45);
+      backdrop-filter: blur(10px);
+    }
+
+    /* Secreto bajo el árbol */
+    .secret {
+      width: 100%;
+      margin: 8px 0 0;
+      text-align: center;
+      font-weight: 800;
+      color: rgba(198,40,40,0.85);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 350ms ease, transform 350ms ease;
+    }
+    .secret.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    body.night .secret { color: rgba(255, 138, 128, 0.92); }
+
+    /* Contador */
+    .counter-section {
+      width: 100%;
+      margin-top: auto;
+      border-top: 1px solid rgba(0,0,0,0.06);
+      padding-top: 16px;
+      text-align: center;
+      transition: border-color 350ms ease;
+    }
+    body.night .counter-section { border-top: 1px solid rgba(255,255,255,0.12); }
+
+    .counter-label {
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 10px;
+      display: block;
+      transition: color 350ms ease;
+    }
+    body.night .counter-label { color: rgba(255,255,255,0.75); }
+
+    .timer {
+      display: flex;
+      justify-content: space-around;
+      color: var(--accent-color);
+      gap: 6px;
+      transition: color 350ms ease;
+    }
+    body.night .timer { color: rgba(255,255,255,0.92); }
+
+    .time-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(198, 40, 40, 0.04);
+      border: 1px solid rgba(198, 40, 40, 0.10);
+      padding: 10px 10px;
+      border-radius: 14px;
+      min-width: 84px;
+      transition: background-color 350ms ease, border-color 350ms ease;
+    }
+
+    body.night .time-box {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .time-value {
+      font-size: 1.4rem;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    .time-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      color: #999;
+      letter-spacing: 0.08em;
+      margin-top: 4px;
+      transition: color 350ms ease;
+    }
+    body.night .time-label { color: rgba(255,255,255,0.68); }
+
+    /* QR */
+    .qr-wrap {
+      width: 100%;
+      margin: 12px 0 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(255, 205, 210, 0.28);
+      border: 1px solid rgba(198,40,40,0.12);
+      transition: background-color 350ms ease, border-color 350ms ease;
+    }
+    body.night .qr-wrap {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+
+    .qr-title {
+      font-weight: 900;
+      color: #7a2a2a;
+      font-size: 0.95rem;
+      text-align: center;
+      transition: color 350ms ease;
+    }
+    body.night .qr-title { color: rgba(255,255,255,0.92); }
+
+    .qr-sub {
+      font-size: 0.85rem;
+      color: #7a2a2a;
+      opacity: 0.85;
+      text-align: center;
+      margin-top: -2px;
+      transition: color 350ms ease, opacity 350ms ease;
+    }
+    body.night .qr-sub { color: rgba(255,255,255,0.78); opacity: 1; }
+
+    #qrcode {
+      background: white;
+      padding: 10px;
+      border-radius: 14px;
+      box-shadow: 0 10px 16px rgba(0,0,0,0.06);
+    }
+    body.night #qrcode {
+      background: rgba(255,255,255,0.94);
+      box-shadow: 0 18px 24px rgba(0,0,0,0.42);
+    }
+
+    .copy-row {
+      width: 100%;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .small {
+      font-size: 0.82rem;
+      opacity: 0.95;
+      font-weight: 900;
+    }
+
+    /* Corazones flotantes */
+    .floating-heart {
+      position: fixed;
+      left: 0;
+      top: 110%;
+      width: 16px;
+      height: 16px;
+      background: rgba(229, 115, 115, 0.55);
+      transform: rotate(45deg);
+      border-radius: 2px;
+      z-index: 0;
+      pointer-events: none;
+      animation: floatUp linear forwards;
+      filter: drop-shadow(0 8px 10px rgba(0,0,0,0.05));
+    }
+    .floating-heart::before,
+    .floating-heart::after {
+      content: "";
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: inherit;
+      border-radius: 50%;
+    }
+    .floating-heart::before { top: -8px; left: 0; }
+    .floating-heart::after { left: -8px; top: 0; }
+
+    @keyframes floatUp {
+      from { transform: translateY(0) rotate(45deg) scale(1); opacity: 0.0; }
+      10% { opacity: 1; }
+      to { transform: translateY(-140vh) rotate(45deg) scale(1.4); opacity: 0; }
+    }
+
+    /* Lluvia de corazones (click) */
+    .burst-heart {
+      position: fixed;
+      width: 14px;
+      height: 14px;
+      background: rgba(211,47,47,0.85);
+      transform: rotate(45deg);
+      border-radius: 2px;
+      z-index: 50;
+      pointer-events: none;
+      animation: burst 900ms ease-out forwards;
+    }
+    .burst-heart::before, .burst-heart::after {
+      content: "";
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background: inherit;
+      border-radius: 50%;
+    }
+    .burst-heart::before { top: -7px; left: 0; }
+    .burst-heart::after { left: -7px; top: 0; }
+
+    @keyframes burst {
+      from { transform: translate(0,0) rotate(45deg) scale(0.6); opacity: 1; }
+      to { transform: translate(var(--dx), var(--dy)) rotate(45deg) scale(1.35); opacity: 0; }
+    }
+
+    /* Modal carta */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      display: grid;
+      place-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 250ms ease;
+      z-index: 100;
+    }
+    body.night .modal-backdrop { background: rgba(0,0,0,0.55); }
+
+    .modal-backdrop.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .letter {
+      width: min(92vw, 420px);
+      background: rgba(255,255,255,0.94);
+      border: 1px solid rgba(198,40,40,0.18);
+      border-radius: 18px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.22);
+      overflow: hidden;
+      transform: translateY(14px) scale(0.98);
+      opacity: 0;
+      transition: transform 280ms ease, opacity 280ms ease;
+      position: relative;
+    }
+    .modal-backdrop.show .letter {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+
+    body.night .letter {
+      background: rgba(10, 12, 26, 0.88);
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 40px 70px rgba(0,0,0,0.55);
+      backdrop-filter: blur(12px);
+    }
+
+    .letter-header {
+      padding: 14px 16px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+    body.night .letter-header { border-bottom: 1px solid rgba(255,255,255,0.12); }
+
+    .letter-title {
+      font-family: 'Dancing Script', cursive;
+      font-size: 1.8rem;
+      color: #b71c1c;
+      margin: 0;
+      line-height: 1.1;
+    }
+    body.night .letter-title { color: #ff8a80; }
+
+    .close-x {
+      border: none;
+      cursor: pointer;
+      background: transparent;
+      font-size: 1.2rem;
+      font-weight: 900;
+      padding: 8px 10px;
+      border-radius: 12px;
+      color: rgba(0,0,0,0.6);
+    }
+    body.night .close-x { color: rgba(255,255,255,0.85); }
+
+    .letter-body {
+      padding: 14px 16px 16px;
+      color: rgba(0,0,0,0.78);
+      font-size: 1rem;
+      line-height: 1.6;
+      position: relative;
+    }
+    body.night .letter-body { color: rgba(255,255,255,0.86); }
+
+    /* efecto “escritura” */
+    .typewriter {
+      white-space: pre-wrap;
+      border-right: 2px solid rgba(198,40,40,0.6);
+      animation: caret 900ms steps(1) infinite;
+    }
+    body.night .typewriter { border-right-color: rgba(255,138,128,0.7); }
+
+    @keyframes caret {
+      0%, 49% { border-right-color: transparent; }
+      50%, 100% { border-right-color: currentColor; }
+    }
+
+    .letter-footer {
+      padding: 12px 16px 16px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      border-top: 1px solid rgba(0,0,0,0.06);
+    }
+    body.night .letter-footer { border-top: 1px solid rgba(255,255,255,0.12); }
+
+    .badge {
+      position: absolute;
+      right: 14px;
+      top: 14px;
+      background: rgba(255, 205, 210, 0.6);
+      border: 1px solid rgba(198,40,40,0.18);
+      color: rgba(183,28,28,0.9);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: 0.78rem;
+    }
+    body.night .badge {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.14);
+      color: rgba(255,255,255,0.88);
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="stars"></canvas>
+
+  <div class="container">
+    <div class="toast" id="toast"></div>
+
+    <div class="header-text">
+      <h1>Para el amor de mi vida, Solanch:</h1>
+      <p>Si pudiera elegir un lugar seguro, sería a tu lado.</p>
+      <p>Cuanto más tiempo estoy contigo, más te amo. Eres mi código favorito y mi excepción no controlada.</p>
+    </div>
+
+    <div class="tree-container" id="treeArea" title="Tócame 👀">
+      <div class="leaves-container" id="heartTree"></div>
+      <div class="trunk"></div>
+    </div>
+
+    <div class="secret" id="secretMsg">✨ Secreto: tú eres mi “hogar” favorito.</div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="loveBtn">💖 Te amo</button>
+      <button class="btn btn-secondary" id="letterBtn">💌 Carta</button>
+      <button class="btn btn-secondary" id="musicBtn">🎵 Activar música</button>
+      <button class="btn btn-secondary" id="nightBtn">🌙 Noche</button>
+      <button class="btn btn-secondary" id="shareBtn">🔗 Copiar link</button>
+    </div>
+
+    <div class="qr-wrap">
+      <div class="qr-title">📱 Escanéame, Solanch</div>
+      <div class="qr-sub">Para abrir esta página desde tu celu</div>
+      <div id="qrcode"></div>
+      <div class="copy-row">
+        <button class="btn btn-secondary small" id="copyUrlBtn">📋 Copiar URL</button>
+        <button class="btn btn-secondary small" id="copyMsgBtn">💌 Copiar mensaje</button>
+      </div>
+      <div class="qr-sub" id="qrHint">Eres mi vida entera, amorcito.</div>
+    </div>
+
+    <div class="counter-section">
+      <span class="counter-label">Mi amor por ti comenzó hace...</span>
+      <div class="timer">
+        <div class="time-box">
+          <span class="time-value" id="days">0</span>
+          <span class="time-label">Días</span>
+        </div>
+        <div class="time-box">
+          <span class="time-value" id="hours">0</span>
+          <span class="time-label">Horas</span>
+        </div>
+        <div class="time-box">
+          <span class="time-value" id="minutes">0</span>
+          <span class="time-label">Min</span>
+        </div>
+        <div class="time-box">
+          <span class="time-value" id="seconds">0</span>
+          <span class="time-label">Seg</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CARTA -->
+  <div class="modal-backdrop" id="modal">
+    <div class="letter" role="dialog" aria-modal="true" aria-label="Carta para Solanch">
+      <div class="badge">Hecha con amor 💖</div>
+      <div class="letter-header">
+        <h2 class="letter-title">Para ti, Solanch</h2>
+        <button class="close-x" id="closeModal" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="letter-body">
+        <div id="typedText" class="typewriter"></div>
+      </div>
+      <div class="letter-footer">
+        <button class="btn btn-secondary" id="replayType">🔁 Releer</button>
+        <button class="btn btn-primary" id="closeBtn">💖 Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================
+    // 1) CONTADOR DESDE FECHA
+    // =========================
+    const startDate = new Date('2024-06-19T00:00:00');
+
+    function updateTimer() {
+      const now = new Date();
+      const diff = now - startDate;
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      document.getElementById('days').innerText = days;
+      document.getElementById('hours').innerText = hours;
+      document.getElementById('minutes').innerText = minutes;
+      document.getElementById('seconds').innerText = seconds;
+    }
+    setInterval(updateTimer, 1000);
+    updateTimer();
+
+    // =========================
+    // 2) ÁRBOL DE CORAZONES
+    // =========================
+    function createHeartTree() {
+      const container = document.getElementById('heartTree');
+      const colors = ['#d32f2f', '#e57373', '#ef5350', '#ffcdd2', '#c62828'];
+
+      for (let i = 0; i < 72; i++) {
+        const heart = document.createElement('div');
+        heart.classList.add('heart');
+
+        const angle = Math.random() * Math.PI * 2;
+        const radius = Math.pow(Math.random(), 0.6) * 110;
+        const x = 125 + radius * Math.cos(angle) - 7;
+        const y = 125 + radius * Math.sin(angle) - 7;
+
+        heart.style.left = `${x}px`;
+        heart.style.top  = `${y}px`;
+        heart.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+
+        const scale = 0.55 + Math.random() * 0.95;
+        heart.style.transform = `scale(${scale}) rotate(45deg)`;
+        heart.style.animationDelay = `${Math.random() * 2.2}s`;
+
+        container.appendChild(heart);
+      }
+    }
+    createHeartTree();
+
+    // =========================
+    // 3) TOAST
+    // =========================
+    const toast = document.getElementById('toast');
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1600);
+    }
+
+    // =========================
+    // 4) CORAZONES FLOTANTES
+    // =========================
+    function spawnFloatingHeart() {
+      const h = document.createElement('div');
+      h.className = 'floating-heart';
+
+      const size = 10 + Math.random() * 18;
+      h.style.width = `${size}px`;
+      h.style.height = `${size}px`;
+
+      h.style.left = `${Math.random() * 100}vw`;
+
+      const duration = 4 + Math.random() * 5.5;
+      h.style.animationDuration = `${duration}s`;
+
+      const alpha = 0.22 + Math.random() * 0.55;
+      h.style.background = `rgba(229,115,115,${alpha})`;
+
+      document.body.appendChild(h);
+      setTimeout(() => h.remove(), duration * 1000 + 200);
+    }
+    setInterval(spawnFloatingHeart, 420);
+
+    // =========================
+    // 5) LLUVIA DE CORAZONES
+    // =========================
+    function burstHearts(x, y, n = 18) {
+      for (let i = 0; i < n; i++) {
+        const b = document.createElement('div');
+        b.className = 'burst-heart';
+        b.style.left = `${x}px`;
+        b.style.top  = `${y}px`;
+
+        const dx = (Math.random() - 0.5) * 240;
+        const dy = (Math.random() - 0.8) * 240;
+        b.style.setProperty('--dx', `${dx}px`);
+        b.style.setProperty('--dy', `${dy}px`);
+
+        const hue = 350 + Math.random() * 18;
+        b.style.background = `hsla(${hue}, 75%, 55%, 0.88)`;
+
+        document.body.appendChild(b);
+        setTimeout(() => b.remove(), 950);
+      }
+    }
+
+    document.getElementById('loveBtn').addEventListener('click', (e) => {
+      showToast('Solanch, te amo más de lo que las palabras alcanzan 💖');
+      burstHearts(e.clientX, e.clientY, 22);
+    });
+
+    // =========================
+    // 6) SECRETO AL TOCAR EL ÁRBOL
+    // =========================
+    const secret = document.getElementById('secretMsg');
+    let secretClicks = 0;
+
+    document.getElementById('treeArea').addEventListener('click', (e) => {
+      secretClicks++;
+
+      // Primera vez: aparece el secreto
+      secret.classList.add('show');
+
+      // Explosión suave de corazones desde el árbol
+      const rect = e.currentTarget.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height * 0.35;
+      burstHearts(cx, cy, 16);
+
+      // Mensajes progresivos (sorpresa)
+      if (secretClicks === 1) showToast('👀 Tienes un secreto…');
+      if (secretClicks === 3) showToast('✨ Cada click = un “te amo” extra');
+      if (secretClicks === 5) {
+        showToast('💍 Bonus: te elijo hoy y siempre');
+        openLetter(true); // abre carta con efecto especial
+        secretClicks = 0;
+      }
+    });
+
+    // =========================
+    // 7) CARTA ROMÁNTICA ANIMADA (TYPEWRITER)
+    // =========================
+    const modal = document.getElementById('modal');
+    const typedEl = document.getElementById('typedText');
+
+    const letterText =
+`Solanch:
+
+Desde que llegaste, todo se siente más claro.
+No porque la vida sea perfecta… sino porque contigo, incluso lo difícil se vuelve llevadero.
+
+Me encanta tu forma de estar en mi mundo.
+Tu risa, tu ternura, tu fuerza.
+Y cómo, sin darte cuenta, haces que yo también quiera ser mejor.
+
+Si algún día dudas, acuérdate de esto:
+yo te elijo.
+En lo simple y en lo grande.
+En los días buenos… y en los días en los que solo necesitamos un abrazo.
+
+Gracias por ser mi lugar seguro.
+Te amo, hoy y siempre.
+
+— Alvaro 💖`;
+
+    let typingTimer = null;
+
+    function typeWriter(text, speed = 18) {
+      clearInterval(typingTimer);
+      typedEl.textContent = '';
+      let i = 0;
+      typingTimer = setInterval(() => {
+        typedEl.textContent += text[i] ?? '';
+        i++;
+        if (i >= text.length) clearInterval(typingTimer);
+      }, speed);
+    }
+
+    function openLetter(fromSecret = false) {
+      modal.classList.add('show');
+      typeWriter(letterText, 16);
+
+      if (fromSecret) {
+        // mini “fuegos” de corazones al abrir por el secreto
+        const cx = window.innerWidth * 0.5;
+        const cy = window.innerHeight * 0.25;
+        burstHearts(cx, cy, 26);
+      }
+    }
+
+    function closeLetter() {
+      modal.classList.remove('show');
+    }
+
+    document.getElementById('letterBtn').addEventListener('click', () => openLetter(false));
+    document.getElementById('closeModal').addEventListener('click', closeLetter);
+    document.getElementById('closeBtn').addEventListener('click', closeLetter);
+    document.getElementById('replayType').addEventListener('click', () => typeWriter(letterText, 16));
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeLetter();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('show')) closeLetter();
+    });
+
+    // =========================
+    // 8) MÚSICA ROMÁNTICA (WebAudio)
+    // =========================
+    let audioCtx = null;
+    let musicOn = false;
+    let musicTimer = null;
+
+    function midiToFreq(m) {
+      return 440 * Math.pow(2, (m - 69) / 12);
+    }
+
+    function playNote(ctx, freq, t, dur, gainVal=0.08) {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(freq, t);
+
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(gainVal, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+
+      o.connect(g);
+      g.connect(ctx.destination);
+
+      o.start(t);
+      o.stop(t + dur + 0.02);
+    }
+
+    function startMusic() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = audioCtx;
+
+      const chords = [
+        [60, 64, 67], // C
+        [57, 60, 64], // Am
+        [53, 57, 60], // F
+        [55, 59, 62], // G
+      ];
+
+      let idx = 0;
+      const tempo = 78;
+      const beat = 60 / tempo;
+      const pattern = [0, 1, 2, 1];
+
+      const schedule = () => {
+        const now = ctx.currentTime;
+        const chord = chords[idx % chords.length];
+
+        for (let step = 0; step < 4; step++) {
+          const note = chord[pattern[step]];
+          const t = now + step * beat;
+          playNote(ctx, midiToFreq(note), t, beat * 0.95, 0.06);
+          if (step === 0) playNote(ctx, midiToFreq(note - 12), t, beat * 1.8, 0.03);
+        }
+        idx++;
+      };
+
+      schedule();
+      musicTimer = setInterval(schedule, 4 * beat * 1000);
+      musicOn = true;
+      showToast('Música activada 🎵');
+      document.getElementById('musicBtn').textContent = '🔇 Pausar música';
+    }
+
+    function stopMusic() {
+      if (musicTimer) clearInterval(musicTimer);
+      musicTimer = null;
+      musicOn = false;
+      showToast('Música en pausa 🔇');
+      document.getElementById('musicBtn').textContent = '🎵 Activar música';
+    }
+
+    document.getElementById('musicBtn').addEventListener('click', async () => {
+      try {
+        if (!musicOn) {
+          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === 'suspended') await audioCtx.resume();
+          startMusic();
+        } else {
+          stopMusic();
+        }
+      } catch (err) {
+        showToast('El navegador bloqueó el audio. Toca de nuevo ✨');
+      }
+    });
+
+    // =========================
+    // 9) MODO NOCHE + ESTRELLAS
+    // =========================
+    const nightBtn = document.getElementById('nightBtn');
+    const stars = document.getElementById('stars');
+    const sctx = stars.getContext('2d');
+
+    function resizeStars() {
+      stars.width = window.innerWidth * devicePixelRatio;
+      stars.height = window.innerHeight * devicePixelRatio;
+      sctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    }
+    window.addEventListener('resize', resizeStars);
+    resizeStars();
+
+    const starField = [];
+    function initStars() {
+      starField.length = 0;
+      const count = Math.floor((window.innerWidth * window.innerHeight) / 9000);
+      for (let i = 0; i < count; i++) {
+        starField.push({
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight,
+          r: 0.5 + Math.random() * 1.6,
+          a: 0.25 + Math.random() * 0.75,
+          tw: 0.004 + Math.random() * 0.012
+        });
+      }
+    }
+    initStars();
+
+    function drawStars() {
+      sctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      // suave gradiente noche
+      const g = sctx.createRadialGradient(
+        window.innerWidth * 0.5, window.innerHeight * 0.15, 20,
+        window.innerWidth * 0.5, window.innerHeight * 0.35, Math.max(window.innerWidth, window.innerHeight)
+      );
+      g.addColorStop(0, 'rgba(140, 120, 255, 0.14)');
+      g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      sctx.fillStyle = g;
+      sctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+
+      for (const st of starField) {
+        st.a += (Math.random() - 0.5) * st.tw;
+        st.a = Math.max(0.12, Math.min(0.95, st.a));
+        sctx.beginPath();
+        sctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+        sctx.fillStyle = `rgba(255,255,255,${st.a})`;
+        sctx.fill();
+      }
+
+      requestAnimationFrame(drawStars);
+    }
+    drawStars();
+
+    function setNightMode(on) {
+      document.body.classList.toggle('night', on);
+      nightBtn.textContent = on ? '☀️ Día' : '🌙 Noche';
+      localStorage.setItem('nightMode', on ? '1' : '0');
+      if (on) showToast('Modo noche activado ✨');
+      else showToast('Modo día activado ☀️');
+    }
+
+    // Auto: si ya lo eligió antes, respeta; si no, activa de noche (19:00–05:59)
+    const saved = localStorage.getItem('nightMode');
+    if (saved === '1') setNightMode(true);
+    else if (saved === '0') setNightMode(false);
+    else {
+      const h = new Date().getHours();
+      setNightMode(h >= 19 || h < 6);
+    }
+
+    nightBtn.addEventListener('click', () => {
+      setNightMode(!document.body.classList.contains('night'));
+    });
+
+    // =========================
+    // 10) QR + COPIAR / COMPARTIR
+    // =========================
+    function getShareUrl() {
+      return window.location.href;
+    }
+
+    function buildQRCode() {
+      const el = document.getElementById('qrcode');
+      el.innerHTML = '';
+      const url = getShareUrl();
+
+      if (typeof QRCode === 'undefined') {
+        document.getElementById('qrHint').textContent =
+          'QR no cargó (sin internet). Cuando tengas internet, aparecerá automáticamente.';
+        return;
+      }
+
+      new QRCode(el, {
+        text: url,
+        width: 164,
+        height: 164,
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+
+    window.addEventListener('load', () => {
+      setTimeout(buildQRCode, 250);
+    });
+
+    async function copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast('Copiado ✅');
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        showToast('Copiado ✅');
+      }
+    }
+
+    function romanticMsg() {
+      return `Solanch 💖
+Te hice una mini página para recordarte lo mucho que te amo.
+Ábrela aquí: ${getShareUrl()}`;
+    }
+
+    document.getElementById('copyUrlBtn').addEventListener('click', () => copyToClipboard(getShareUrl()));
+    document.getElementById('copyMsgBtn').addEventListener('click', () => copyToClipboard(romanticMsg()));
+
+    document.getElementById('shareBtn').addEventListener('click', () => {
+      const url = getShareUrl();
+      if (navigator.share) {
+        navigator.share({
+          title: 'Para Solanch',
+          text: 'Te hice una página con todo mi amor 💖',
+          url
+        }).catch(() => copyToClipboard(url));
+      } else {
+        copyToClipboard(url);
+      }
+    });
+  </script>
+</body>
+</html>
